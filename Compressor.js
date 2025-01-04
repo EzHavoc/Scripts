@@ -1,4 +1,5 @@
-require('dotenv').config();
+const environment = process.env.NODE_ENV || 'dev'; // Default to 'dev' if NODE_ENV is not set
+require('dotenv').config({ path: `./Compressor.env.${environment}` });
 const axios = require('axios');
 const sharp = require('sharp');
 const fs = require('fs');

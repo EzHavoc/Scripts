@@ -5,9 +5,9 @@ const path = require('path');
 const sharp = require('sharp');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Define the folder containing images
+// Define the folder paths
 const inputFolder = path.join(__dirname, 'input_images'); // Correctly specify folder path
 const outputFolder = path.join(__dirname, 'output_images');
 
@@ -16,22 +16,28 @@ if (!fs.existsSync(outputFolder)) {
   fs.mkdirSync(outputFolder, { recursive: true }); // Create the folder if it doesn't exist
 }
 
-// Compress images in the folder
+// Allowed file extensions
+const validExtensions = ['.jpg', '.jpeg', '.png'];
+
+// Compress images in the folder and convert to .webp
 async function compressImages() {
-  const files = fs.readdirSync(inputFolder); // Get the list of files in the input folder
+  const files = fs.readdirSync(inputFolder).filter(file =>
+    validExtensions.includes(path.extname(file).toLowerCase())
+  );
 
   for (const file of files) {
     const inputPath = path.join(inputFolder, file);
-    const outputPath = path.join(outputFolder, `compressed_${file}`);
+    const outputFileName = path.basename(file, path.extname(file)) + '.webp'; // Change extension to .webp
+    const outputPath = path.join(outputFolder, outputFileName);
 
     try {
-      console.log(`Compressing image: ${file}`);
+      console.log(`Compressing and converting image: ${file}`);
       await sharp(inputPath)
-        .jpeg({ quality: 40 }) // Adjust quality as needed
+        .webp({ quality: 40 }) // Convert to .webp with specified quality
         .toFile(outputPath);
-      console.log(`Compressed image saved to: ${outputPath}`);
+      console.log(`Converted image saved to: ${outputPath}`);
     } catch (error) {
-      console.error(`Error compressing ${file}:`, error);
+      console.error(`Error compressing and converting ${file}:`, error);
     }
   }
 }
@@ -43,7 +49,7 @@ app.use('/compressed_images', express.static(outputFolder));
 app.get('/compress', async (req, res) => {
   try {
     await compressImages();
-    res.send('Images compressed and ready to view.');
+    res.send('Images compressed and converted to .webp format. Check the "output_images" folder.');
   } catch (error) {
     res.status(500).send('Error compressing images.');
   }
